@@ -14,57 +14,59 @@ public class PasswordResetMailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.frontend.reset-password-url}")
-    private String resetPasswordUrl;
-
     @Value("${spring.mail.username:}")
     private String senderEmail;
 
-    public void sendPasswordResetEmail(
+    public void sendPasswordResetOtp(
             String recipientEmail,
-            String rawToken
+            String otp
     ) {
-        String resetLink =
-                resetPasswordUrl + "?token=" + rawToken;
 
-        log.info(
-                "Password reset link for {}: {}",
-                recipientEmail,
-                resetLink
-        );
+        if (senderEmail == null
+                || senderEmail.isBlank()) {
 
-        /*
-         * Trong môi trường phát triển, nếu chưa cấu hình email
-         * thì chỉ in đường dẫn reset ra terminal.
-         */
-        if (senderEmail == null || senderEmail.isBlank()) {
-            log.warn(
-                    "Chưa cấu hình tài khoản gửi email. "
-                            + "Reset link chỉ được ghi ra terminal."
+            throw new IllegalStateException(
+                    "Chưa cấu hình tài khoản gửi email"
             );
-            return;
         }
 
-        SimpleMailMessage message = new SimpleMailMessage();
+        SimpleMailMessage message =
+                new SimpleMailMessage();
 
         message.setFrom(senderEmail);
-        message.setTo(recipientEmail);
-        message.setSubject(
-                "HUBT Assistant - Đặt lại mật khẩu"
-        );
-        message.setText(
-                """
-                Bạn đã yêu cầu đặt lại mật khẩu HUBT Assistant.
 
-                Truy cập liên kết sau:
+        message.setTo(recipientEmail);
+
+        message.setSubject(
+                "HUBT Assistant - Mã OTP đặt lại mật khẩu"
+        );
+
+        message.setText("""
+                Xin chào,
+
+                Bạn vừa yêu cầu đặt lại mật khẩu
+                trên hệ thống HUBT Assistant.
+
+                Mã OTP của bạn là:
+
                 %s
 
-                Liên kết này sẽ hết hạn sau 15 phút.
+                Mã OTP có hiệu lực trong 5 phút.
 
-                Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email.
-                """.formatted(resetLink)
-        );
+                Không cung cấp mã OTP này cho bất kỳ ai.
+
+                Nếu bạn không thực hiện yêu cầu này,
+                vui lòng bỏ qua email.
+
+                Trân trọng,
+                HUBT Assistant
+                """.formatted(otp));
 
         mailSender.send(message);
+
+        log.info(
+                "Đã gửi OTP đặt lại mật khẩu tới {}",
+                recipientEmail
+        );
     }
 }

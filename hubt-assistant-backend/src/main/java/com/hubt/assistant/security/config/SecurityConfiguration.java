@@ -25,36 +25,79 @@ public class SecurityConfiguration {
     ) throws Exception {
 
         http
+
+                // =================================================
+                // CSRF
+                // =================================================
                 .csrf(csrf -> csrf.disable())
 
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS
-                        )
+                // =================================================
+                // SESSION
+                // =================================================
+                .sessionManagement(
+                        session -> session
+                                .sessionCreationPolicy(
+                                        SessionCreationPolicy.STATELESS
+                                )
                 )
 
-                .authorizeHttpRequests(auth -> auth
+                // =================================================
+                // AUTHORIZATION
+                // =================================================
+                .authorizeHttpRequests(
+                        auth -> auth
 
-                        .requestMatchers(
-        "/api/v1/public/**",
-        "/api/v1/auth/register",
-        "/api/v1/auth/login",
-        "/api/v1/auth/refresh-token",
-        "/api/v1/auth/logout",
-        "/api/v1/auth/forgot-password",
-        "/api/v1/auth/reset-password",
-        "/swagger-ui/**",
-        "/swagger-ui.html",
-        "/v3/api-docs/**",
-        "/actuator/health"
-).permitAll()
+                                // =================================
+                                // PUBLIC API
+                                // =================================
+                                .requestMatchers(
+                                        "/api/v1/public/**",
 
-.requestMatchers(
-        "/api/v1/auth/me",
-        "/api/v1/auth/change-password"
-).authenticated()
+                                        "/api/v1/auth/register",
+                                        "/api/v1/auth/login",
+                                        "/api/v1/auth/refresh-token",
+                                        "/api/v1/auth/forgot-password",
+                                        "/api/v1/auth/verify-reset-otp",
+                                        "/api/v1/auth/reset-password",
+
+                                        "/uploads/**",
+
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/v3/api-docs/**",
+
+                                        "/actuator/health"
+                                )
+                                .permitAll()
+
+                                // =================================
+                                // AUTHENTICATED AUTH API
+                                // =================================
+                                .requestMatchers(
+                                        "/api/v1/auth/me",
+                                        "/api/v1/auth/change-password",
+                                        "/api/v1/auth/logout"
+                                )
+                                .authenticated()
+
+                                // =================================
+                                // CANDIDATE API
+                                // =================================
+                                .requestMatchers(
+                                        "/api/v1/candidates/**"
+                                )
+                                .authenticated()
+
+                                // =================================
+                                // DEFAULT
+                                // =================================
+                                .anyRequest()
+                                .authenticated()
                 )
 
+                // =================================================
+                // JWT FILTER
+                // =================================================
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -65,6 +108,7 @@ public class SecurityConfiguration {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+
         return new BCryptPasswordEncoder(12);
     }
 }
