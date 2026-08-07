@@ -2,6 +2,7 @@
 -- ============================================================
 -- HUBT ASSISTANT - FULL POSTGRESQL DATABASE
 -- PostgreSQL 15+
+-- Updated for Spring Boot/JPA authentication module
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -14,10 +15,6 @@ SET search_path TO hubt, public;
 -- ENUM TYPES
 -- ============================================================
 
-CREATE TYPE account_status AS ENUM (
-    'PENDING', 'ACTIVE', 'LOCKED', 'SUSPENDED', 'DELETED'
-);
-
 CREATE TYPE university_status AS ENUM (
     'ACTIVE', 'INACTIVE'
 );
@@ -28,10 +25,6 @@ CREATE TYPE role_scope AS ENUM (
 
 CREATE TYPE auth_provider AS ENUM (
     'LOCAL', 'GOOGLE', 'FACEBOOK'
-);
-
-CREATE TYPE gender_type AS ENUM (
-    'MALE', 'FEMALE', 'OTHER', 'UNDISCLOSED'
 );
 
 CREATE TYPE relationship_type AS ENUM (
@@ -210,8 +203,15 @@ CREATE TABLE users (
     full_name VARCHAR(255) NOT NULL,
     avatar_url TEXT,
     date_of_birth DATE,
-    gender gender_type DEFAULT 'UNDISCLOSED',
-    account_status account_status NOT NULL DEFAULT 'PENDING',
+    gender VARCHAR(30) DEFAULT 'UNDISCLOSED'
+        CHECK (
+            gender IS NULL
+            OR gender IN ('MALE', 'FEMALE', 'OTHER', 'UNDISCLOSED')
+        ),
+    account_status VARCHAR(30) NOT NULL DEFAULT 'PENDING'
+        CHECK (
+            account_status IN ('PENDING', 'ACTIVE', 'LOCKED', 'SUSPENDED', 'DELETED')
+        ),
     email_verified BOOLEAN NOT NULL DEFAULT FALSE,
     phone_verified BOOLEAN NOT NULL DEFAULT FALSE,
     last_login_at TIMESTAMPTZ,
@@ -971,13 +971,22 @@ ON system_settings (
 CREATE TABLE refresh_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash TEXT NOT NULL UNIQUE,
-    device_id VARCHAR(255),
-    ip_address INET,
-    user_agent TEXT,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
     expires_at TIMESTAMPTZ NOT NULL,
     revoked_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_ip VARCHAR(64),
+    user_agent TEXT
+);
+
+CREATE TABLE password_reset_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_ip VARCHAR(64)
 );
 
 -- ============================================================
@@ -1022,6 +1031,9 @@ CREATE INDEX idx_notifications_user_status ON notifications(user_id, status);
 CREATE INDEX idx_audit_actor_created ON audit_logs(actor_user_id, created_at DESC);
 CREATE INDEX idx_refresh_tokens_user ON refresh_tokens(user_id);
 CREATE INDEX idx_refresh_tokens_expiry ON refresh_tokens(expires_at);
+CREATE INDEX idx_password_reset_tokens_user ON password_reset_tokens(user_id);
+CREATE INDEX idx_password_reset_tokens_expiry ON password_reset_tokens(expires_at);
+CREATE INDEX idx_password_reset_tokens_hash ON password_reset_tokens(token_hash);
 
 CREATE INDEX idx_conditions_json_gin ON major_admission_methods USING GIN (conditions_json);
 CREATE INDEX idx_analytics_metadata_gin ON analytics_events USING GIN (metadata_json);
@@ -1407,3 +1419,68 @@ COMMENT ON TABLE audit_logs IS
 -- ============================================================
 -- END
 -- ============================================================
+
+
+
+"EDITTTTTTTTTTTTTT"
+CREATE TABLE hubt.password_reset_otps (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES hubt.users(id) ON DELETE CASCADE,
+    otp_hash VARCHAR(64) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    failed_attempts INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_ip VARCHAR(64)
+);
+DROP TABLE IF EXISTS hubt.password_reset_tokens CASCADE;
+CREATE TABLE hubt.password_reset_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    user_id UUID NOT NULL
+        REFERENCES hubt.users(id)
+        ON DELETE CASCADE,
+
+    otp_hash VARCHAR(64) NOT NULL,
+
+    expires_at TIMESTAMPTZ NOT NULL,
+
+    verified_at TIMESTAMPTZ,
+
+    reset_token_hash VARCHAR(64) UNIQUE,
+
+    reset_token_expires_at TIMESTAMPTZ,
+
+    failed_attempts INT NOT NULL DEFAULT 0
+        CHECK (failed_attempts >= 0),
+
+    used_at TIMESTAMPTZ,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    created_ip VARCHAR(64)
+);
+
+CREATE INDEX idx_password_reset_tokens_user
+ON hubt.password_reset_tokens(user_id);
+
+CREATE INDEX idx_password_reset_tokens_otp_expiry
+ON hubt.password_reset_tokens(expires_at);
+
+CREATE INDEX idx_password_reset_tokens_reset_hash
+ON hubt.password_reset_tokens(reset_token_hash);
+CREATE SEQUENCE IF NOT EXISTS hubt.candidate_code_seq
+START WITH 1
+INCREMENT BY 1
+MINVALUE 1;
+
+SELECT
+    column_name,
+    data_type,
+    udt_name,
+    is_nullable,
+    column_default
+FROM information_schema.columns
+WHERE table_schema = 'hubt'
+  AND table_name = 'candidate_academic_profiles'
+ORDER BY ordinal_position;

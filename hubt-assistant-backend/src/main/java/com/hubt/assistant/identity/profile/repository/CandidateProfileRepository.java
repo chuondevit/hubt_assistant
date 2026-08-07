@@ -9,7 +9,16 @@ import java.util.UUID;
 public interface CandidateProfileRepository
         extends JpaRepository<CandidateProfile, UUID> {
 
-    Optional<CandidateProfile> findByUserId(UUID userId);
+    Optional<CandidateProfile> findByUserId(
+            UUID userId
+    );
 
-    boolean existsByUserId(UUID userId);
+    boolean existsByIdentityNumber(
+            String identityNumber
+    );
+
+    boolean existsByIdentityNumberAndUserIdNot(
+            String identityNumber,
+            UUID userId
+    );
 }

@@ -1,5 +1,6 @@
 package com.hubt.assistant.identity.auth.service;
-
+import com.hubt.assistant.identity.profile.service.CandidateCodeGenerator;
+import java.math.BigDecimal;
 import com.hubt.assistant.common.exception.BusinessException;
 import com.hubt.assistant.common.exception.ConflictException;
 import com.hubt.assistant.common.exception.ResourceNotFoundException;
@@ -38,7 +39,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-
+private final CandidateCodeGenerator
+        candidateCodeGenerator;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
     private final CandidateProfileRepository candidateProfileRepository;
@@ -99,10 +101,32 @@ public class AuthService {
 
         userRoleRepository.save(userRole);
 
-        CandidateProfile candidateProfile = new CandidateProfile();
-        candidateProfile.setUser(savedUser);
+      CandidateProfile candidateProfile =
+        new CandidateProfile();
 
-        candidateProfileRepository.save(candidateProfile);
+candidateProfile.setUser(
+        savedUser
+);
+
+candidateProfile.setCandidateCode(
+        candidateCodeGenerator.generate()
+);
+
+candidateProfile.setProfileCompletionPercent(
+        BigDecimal.ZERO
+);
+
+candidateProfile.setCreatedAt(
+        Instant.now()
+);
+
+candidateProfile.setUpdatedAt(
+        Instant.now()
+);
+
+candidateProfileRepository.save(
+        candidateProfile
+);
 
         return new RegisterResponse(
                 savedUser.getId(),
