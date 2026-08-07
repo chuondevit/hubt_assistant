@@ -12,7 +12,7 @@
 **Nếu lần đầu tiên thì dùng lệnh clone**
 
 ```bash
-git clone [https://github.com/luongit/fe-bkap-ai-schooling](https://github.com/chuondevit/hubt_assistant)
+git clone https://github.com/chuondevit/hubt_assistant
 ```
 
 ### Bước 2: Cài đặt dự án (Chỉ dành cho lần đàu clone dự án)
