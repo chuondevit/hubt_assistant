@@ -1,0 +1,30 @@
+# Maven
+target/
+**/target/
+
+# IntelliJ
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+# Environment / secrets
+.env
+.env.*
+application-local.properties
+
+# Temporary files
+*.tmp
+*.temp
