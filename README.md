@@ -18,7 +18,7 @@ git clone https://github.com/chuondevit/hubt_assistant
 ### Bước 2: Cài đặt dự án (Chỉ dành cho lần đàu clone dự án)
 **cd và thưc mục gốc của dự án nếu chwua ử thư mục gốc**
 ```bash
-cd fe-bkap-ai-schooling
+cd hubt_assistant
 ```
 Sau đó chạy tiếp lệnh cài thư viện
 ```bash
@@ -40,7 +40,7 @@ Bước 1: Pull code mới nhất từ `master`
 > Lệnh pull cũng thường dùng trước khi đẩy dự án lên để đảm bảo là không bị xung đột phiên bản
 ```bash
 git fetch origin
-git checkout master
+git checkout main
 git pull --ff-only origin master
 ```
 
