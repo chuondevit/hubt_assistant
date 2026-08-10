@@ -16,10 +16,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import lombok.extern.slf4j.Slf4j;
 import java.time.Instant;
 import java.util.Locale;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PasswordResetService {
@@ -63,78 +63,117 @@ public class PasswordResetService {
     // FORGOT PASSWORD
     // =========================================================
 
-    @Transactional
-    public void requestReset(
-            String requestEmail,
-            String ipAddress
-    ) {
+  @Transactional
+public void requestReset(
+        String requestEmail,
+        String ipAddress
+) {
 
-        String email = requestEmail
-                .trim()
-                .toLowerCase(Locale.ROOT);
+    String email = requestEmail
+            .trim()
+            .toLowerCase(Locale.ROOT);
 
-        userRepository
-                .findByEmailIgnoreCaseAndDeletedAtIsNull(
-                        email
-                )
-                .ifPresent(
-                        user -> createOtp(
+    log.info(
+            "Forgot password request for email: {}",
+            email
+    );
+
+    userRepository
+            .findByEmailIgnoreCaseAndDeletedAtIsNull(
+                    email
+            )
+            .ifPresentOrElse(
+
+                    user -> {
+
+                        log.info(
+                                "Đã tìm thấy user: id={}, email={}",
+                                user.getId(),
+                                user.getEmail()
+                        );
+
+                        createOtp(
                                 user,
                                 ipAddress
-                        )
-                );
-    }
+                        );
+                    },
+
+                    () -> log.warn(
+                            "Không tìm thấy user với email: {}",
+                            email
+                    )
+            );
+}
 
 
-    private void createOtp(
-            User user,
-            String ipAddress
-    ) {
+   private void createOtp(
+        User user,
+        String ipAddress
+) {
 
-        Instant now = Instant.now();
+    Instant now = Instant.now();
 
-        // Hủy OTP/reset token cũ
-        tokenRepository.invalidateAllUnusedByUserId(
-                user.getId(),
-                now
-        );
+    log.info(
+            "Bắt đầu tạo OTP cho user: {}",
+            user.getEmail()
+    );
 
-        // Sinh OTP 6 số
-        String rawOtp =
-                otpGenerator.generateSixDigitOtp();
+    tokenRepository.invalidateAllUnusedByUserId(
+            user.getId(),
+            now
+    );
 
-        PasswordResetToken token =
-                new PasswordResetToken();
+    String rawOtp =
+            otpGenerator.generateSixDigitOtp();
 
-        token.setUser(user);
+    log.info(
+            "Đã sinh OTP cho user {}",
+            user.getEmail()
+    );
 
-        // Không lưu OTP thật trong DB
-        token.setOtpHash(
-                secureTokenGenerator.hashToken(
-                        rawOtp
-                )
-        );
+    PasswordResetToken token =
+            new PasswordResetToken();
 
-        token.setExpiresAt(
-                now.plusMillis(
-                        otpExpiration
-                )
-        );
+    token.setUser(user);
 
-        token.setFailedAttempts(0);
+    token.setOtpHash(
+            secureTokenGenerator.hashToken(
+                    rawOtp
+            )
+    );
 
-        token.setCreatedAt(now);
+    token.setExpiresAt(
+            now.plusMillis(
+                    otpExpiration
+            )
+    );
 
-        token.setCreatedIp(ipAddress);
+    token.setFailedAttempts(0);
+    token.setCreatedAt(now);
+    token.setCreatedIp(ipAddress);
 
-        tokenRepository.save(token);
+    tokenRepository.save(token);
 
-        // Chỉ gửi OTP thật qua email
-        mailService.sendPasswordResetOtp(
-                user.getEmail(),
-                rawOtp
-        );
-    }
+    log.info(
+            "Đã lưu password reset token cho user {}",
+            user.getEmail()
+    );
+
+    log.info(
+            "Chuẩn bị gửi OTP tới {}",
+            user.getEmail()
+    );
+
+    mailService.sendPasswordResetOtp(
+            user.getEmail(),
+            rawOtp
+    );
+
+    log.info(
+            "Hoàn tất gửi OTP tới {}",
+            user.getEmail()
+    );
+}
 
 
     // =========================================================

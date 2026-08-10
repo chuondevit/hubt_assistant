@@ -2,6 +2,7 @@ package com.hubt.assistant.notification.email;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -17,6 +18,7 @@ public class PasswordResetMailService {
     @Value("${spring.mail.username:}")
     private String senderEmail;
 
+
     public void sendPasswordResetOtp(
             String recipientEmail,
             String otp
@@ -30,18 +32,30 @@ public class PasswordResetMailService {
             );
         }
 
+
+        log.info(
+                "Bắt đầu gửi OTP tới email: {}",
+                recipientEmail
+        );
+
+
         SimpleMailMessage message =
                 new SimpleMailMessage();
 
-        message.setFrom(senderEmail);
+        message.setFrom(
+                senderEmail
+        );
 
-        message.setTo(recipientEmail);
+        message.setTo(
+                recipientEmail
+        );
 
         message.setSubject(
                 "HUBT Assistant - Mã OTP đặt lại mật khẩu"
         );
 
-        message.setText("""
+        message.setText(
+                """
                 Xin chào,
 
                 Bạn vừa yêu cầu đặt lại mật khẩu
@@ -60,13 +74,30 @@ public class PasswordResetMailService {
 
                 Trân trọng,
                 HUBT Assistant
-                """.formatted(otp));
-
-        mailSender.send(message);
-
-        log.info(
-                "Đã gửi OTP đặt lại mật khẩu tới {}",
-                recipientEmail
+                """.formatted(otp)
         );
+
+
+        try {
+
+            mailSender.send(
+                    message
+            );
+
+            log.info(
+                    "Đã gửi OTP đặt lại mật khẩu tới {}",
+                    recipientEmail
+            );
+
+        } catch (Exception ex) {
+
+            log.error(
+                    "Không thể gửi OTP tới {}",
+                    recipientEmail,
+                    ex
+            );
+
+            throw ex;
+        }
     }
 }

@@ -7,14 +7,8 @@ import java.math.BigDecimal;
 
 public record UpdateCandidateAcademicProfileRequest(
 
-        @DecimalMin(
-                value = "0.0",
-                message = "Điểm Toán phải từ 0 đến 10"
-        )
-        @DecimalMax(
-                value = "10.0",
-                message = "Điểm Toán phải từ 0 đến 10"
-        )
+        @DecimalMin("0.0")
+        @DecimalMax("10.0")
         BigDecimal mathScore,
 
         @DecimalMin("0.0")
