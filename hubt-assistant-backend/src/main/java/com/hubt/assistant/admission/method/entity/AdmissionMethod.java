@@ -1,36 +1,53 @@
-package com.hubt.assistant.organization.university.entity;
+package com.hubt.assistant.admission.method.entity;
+
+import com.hubt.assistant.organization.university.entity.University;
 
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
 
+
 @Entity
 @Table(
-        name = "universities",
+        name = "admission_methods",
         schema = "hubt"
 )
 @Getter
 @Setter
 @NoArgsConstructor
-public class University {
+public class AdmissionMethod {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+
+    @ManyToOne(
+            fetch = FetchType.LAZY,
+            optional = false
+    )
+    @JoinColumn(
+            name = "university_id",
+            nullable = false
+    )
+    private University university;
+
+
     @Column(
             name = "code",
             nullable = false,
-            unique = true,
             length = 50
     )
     private String code;
+
 
     @Column(
             name = "name",
@@ -39,11 +56,6 @@ public class University {
     )
     private String name;
 
-    @Column(
-            name = "short_name",
-            length = 100
-    )
-    private String shortName;
 
     @Column(
             name = "description",
@@ -51,40 +63,15 @@ public class University {
     )
     private String description;
 
-    @Column(
-            name = "address",
-            columnDefinition = "TEXT"
-    )
-    private String address;
-
-    @Column(name = "email")
-    private String email;
-
-    @Column(
-            name = "phone",
-            length = 30
-    )
-    private String phone;
-
-    @Column(
-            name = "website",
-            length = 255
-    )
-    private String website;
-
-    @Column(
-            name = "logo_url",
-            columnDefinition = "TEXT"
-    )
-    private String logoUrl;
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(
             name = "status",
             nullable = false,
-            columnDefinition = "hubt.university_status"
+            columnDefinition = "hubt.generic_status"
     )
-    private UniversityStatus status;
+    private AdmissionMethodStatus status;
+
 
     @Column(
             name = "created_at",
@@ -93,14 +80,13 @@ public class University {
     )
     private Instant createdAt;
 
+
     @Column(
             name = "updated_at",
             nullable = false
     )
     private Instant updatedAt;
 
-    @Column(name = "deleted_at")
-    private Instant deletedAt;
 
     @PrePersist
     protected void onCreate() {
@@ -116,12 +102,7 @@ public class University {
         }
 
         if (status == null) {
-            status = UniversityStatus.ACTIVE;
+            status = AdmissionMethodStatus.ACTIVE;
         }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = Instant.now();
     }
 }
