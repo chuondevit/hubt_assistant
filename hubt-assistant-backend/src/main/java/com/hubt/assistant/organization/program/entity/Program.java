@@ -1,33 +1,47 @@
-package com.hubt.assistant.organization.university.entity;
+package com.hubt.assistant.organization.program.entity;
+
+import com.hubt.assistant.organization.major.entity.Major;
 
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(
-        name = "universities",
+        name = "programs",
         schema = "hubt"
 )
 @Getter
 @Setter
 @NoArgsConstructor
-public class University {
+public class Program {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @ManyToOne(
+            fetch = FetchType.LAZY,
+            optional = false
+    )
+    @JoinColumn(
+            name = "major_id",
+            nullable = false
+    )
+    private Major major;
+
     @Column(
             name = "code",
             nullable = false,
-            unique = true,
             length = 50
     )
     private String code;
@@ -40,10 +54,23 @@ public class University {
     private String name;
 
     @Column(
-            name = "short_name",
+            name = "training_mode",
             length = 100
     )
-    private String shortName;
+    private String trainingMode;
+
+    @Column(
+            name = "language",
+            length = 100
+    )
+    private String language;
+
+    @Column(
+            name = "duration_years",
+            precision = 3,
+            scale = 1
+    )
+    private BigDecimal durationYears;
 
     @Column(
             name = "description",
@@ -51,40 +78,13 @@ public class University {
     )
     private String description;
 
-    @Column(
-            name = "address",
-            columnDefinition = "TEXT"
-    )
-    private String address;
-
-    @Column(name = "email")
-    private String email;
-
-    @Column(
-            name = "phone",
-            length = 30
-    )
-    private String phone;
-
-    @Column(
-            name = "website",
-            length = 255
-    )
-    private String website;
-
-    @Column(
-            name = "logo_url",
-            columnDefinition = "TEXT"
-    )
-    private String logoUrl;
-
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(
             name = "status",
             nullable = false,
-            columnDefinition = "hubt.university_status"
+            columnDefinition = "hubt.generic_status"
     )
-    private UniversityStatus status;
+    private ProgramStatus status;
 
     @Column(
             name = "created_at",
@@ -98,9 +98,6 @@ public class University {
             nullable = false
     )
     private Instant updatedAt;
-
-    @Column(name = "deleted_at")
-    private Instant deletedAt;
 
     @PrePersist
     protected void onCreate() {
@@ -116,12 +113,7 @@ public class University {
         }
 
         if (status == null) {
-            status = UniversityStatus.ACTIVE;
+            status = ProgramStatus.ACTIVE;
         }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = Instant.now();
     }
 }
